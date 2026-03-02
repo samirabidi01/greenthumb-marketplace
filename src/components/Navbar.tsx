@@ -1,11 +1,20 @@
 import { Link, useLocation } from "react-router-dom";
-import { ShoppingCart, Leaf, Menu, X, User } from "lucide-react";
+import { ShoppingCart, Leaf, Menu, X, User, LogOut } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
   const { totalItems } = useCart();
+  const { user, signOut } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -53,6 +62,35 @@ const Navbar = () => {
             )}
           </Link>
 
+          {user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground transition-colors hover:bg-primary/90">
+                  <User className="h-5 w-5" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem className="text-xs text-muted-foreground focus:bg-transparent">
+                  {user.email}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => signOut()} className="gap-2 text-destructive">
+                  <LogOut className="h-4 w-4" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link to="/auth">
+              <Button variant="outline" size="sm" className="hidden gap-2 md:flex">
+                <User className="h-4 w-4" />
+                Sign In
+              </Button>
+              <button className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-secondary md:hidden">
+                <User className="h-5 w-5" />
+              </button>
+            </Link>
+          )}
+
           <button
             className="flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-secondary md:hidden"
             onClick={() => setMobileOpen(!mobileOpen)}
@@ -84,6 +122,15 @@ const Navbar = () => {
                   {link.label}
                 </Link>
               ))}
+              {!user && (
+                <Link
+                  to="/auth"
+                  onClick={() => setMobileOpen(false)}
+                  className="rounded-lg px-4 py-3 text-sm font-medium text-primary transition-colors hover:bg-secondary"
+                >
+                  Sign In / Sign Up
+                </Link>
+              )}
             </div>
           </motion.div>
         )}
