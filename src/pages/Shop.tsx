@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search, SlidersHorizontal, X } from "lucide-react";
-import { plants } from "@/data/plants";
+import { Search, SlidersHorizontal, X, Loader2 } from "lucide-react";
+import { useProducts } from "@/hooks/useProducts";
 import PlantCard from "@/components/PlantCard";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -9,6 +9,7 @@ const Shop = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const { data: products = [], isLoading } = useProducts();
 
   const activeCategory = searchParams.get("category") || "";
   const activeDifficulty = searchParams.get("difficulty") || "";
@@ -28,15 +29,15 @@ const Shop = () => {
   };
 
   const filtered = useMemo(() => {
-    return plants.filter((p) => {
-      if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.tags.some(t => t.includes(search.toLowerCase()))) return false;
+    return products.filter((p) => {
+      if (search && !p.name.toLowerCase().includes(search.toLowerCase()) && !p.tags?.some(t => t.includes(search.toLowerCase()))) return false;
       if (activeCategory && p.category !== activeCategory) return false;
       if (activeDifficulty && p.difficulty !== activeDifficulty) return false;
-      if (activeLight && p.lightNeeds !== activeLight) return false;
-      if (activePetSafe === "true" && !p.petSafe) return false;
+      if (activeLight && p.light_needs !== activeLight) return false;
+      if (activePetSafe === "true" && !p.pet_safe) return false;
       return true;
     });
-  }, [search, activeCategory, activeDifficulty, activeLight, activePetSafe]);
+  }, [products, search, activeCategory, activeDifficulty, activeLight, activePetSafe]);
 
   const hasActiveFilters = activeCategory || activeDifficulty || activeLight || activePetSafe || search;
 
@@ -56,11 +57,10 @@ const Shop = () => {
   return (
     <div className="min-h-screen">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl text-foreground">Shop Plants</h1>
           <p className="mt-2 text-muted-foreground">
-            {filtered.length} plant{filtered.length !== 1 ? "s" : ""} available
+            {isLoading ? "Loading..." : `${filtered.length} plant${filtered.length !== 1 ? "s" : ""} available`}
           </p>
         </div>
 
@@ -138,7 +138,11 @@ const Shop = () => {
         </AnimatePresence>
 
         {/* Grid */}
-        {filtered.length > 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : filtered.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filtered.map((plant, i) => (
               <PlantCard key={plant.id} plant={plant} index={i} />

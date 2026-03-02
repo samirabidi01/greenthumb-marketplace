@@ -1,12 +1,12 @@
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, ShoppingCart, Star, Droplets, Sun, Ruler, Heart } from "lucide-react";
-import { plants } from "@/data/plants";
+import { ArrowLeft, ShoppingCart, Star, Loader2 } from "lucide-react";
+import { useProduct } from "@/hooks/useProducts";
 import { useCart } from "@/context/CartContext";
 import { motion } from "framer-motion";
 
-const lightLabels = { low: "☁️ Low Light", medium: "🌤️ Medium Light", high: "☀️ Bright Light" };
-const waterLabels = { daily: "💧 Daily", weekly: "💧 Weekly", biweekly: "💧 Every 2 weeks" };
-const difficultyColors = {
+const lightLabels: Record<string, string> = { low: "☁️ Low Light", medium: "🌤️ Medium Light", high: "☀️ Bright Light" };
+const waterLabels: Record<string, string> = { daily: "💧 Daily", weekly: "💧 Weekly", biweekly: "💧 Every 2 weeks" };
+const difficultyColors: Record<string, string> = {
   easy: "bg-primary/10 text-primary",
   medium: "bg-accent/10 text-accent",
   hard: "bg-destructive/10 text-destructive",
@@ -15,7 +15,15 @@ const difficultyColors = {
 const PlantDetail = () => {
   const { id } = useParams();
   const { addToCart } = useCart();
-  const plant = plants.find((p) => p.id === id);
+  const { data: plant, isLoading } = useProduct(id);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (!plant) {
     return (
@@ -37,16 +45,14 @@ const PlantDetail = () => {
         </Link>
 
         <div className="grid gap-8 md:grid-cols-2">
-          {/* Image */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="overflow-hidden rounded-2xl bg-secondary"
           >
-            <img src={plant.image} alt={plant.name} className="h-full w-full object-cover" />
+            <img src={plant.image_url || "/placeholder.svg"} alt={plant.name} className="h-full w-full object-cover" />
           </motion.div>
 
-          {/* Details */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -55,11 +61,10 @@ const PlantDetail = () => {
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Star className="h-4 w-4 fill-accent text-accent" />
               <span className="font-medium text-foreground">{plant.rating}</span>
-              <span>({plant.reviewCount} reviews)</span>
+              <span>({plant.review_count} reviews)</span>
             </div>
 
             <h1 className="mt-2 text-4xl text-foreground">{plant.name}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">by {plant.seller}</p>
             <p className="mt-4 text-lg text-muted-foreground">{plant.description}</p>
 
             <div className="mt-6 text-3xl font-bold text-foreground">${plant.price}</div>
@@ -71,13 +76,12 @@ const PlantDetail = () => {
               <ShoppingCart className="h-5 w-5" /> Add to Cart
             </button>
 
-            {/* Attributes */}
             <div className="mt-8 grid grid-cols-2 gap-3">
               {[
-                { label: "Light", value: lightLabels[plant.lightNeeds] },
-                { label: "Watering", value: waterLabels[plant.wateringFrequency] },
-                { label: "Height", value: `📏 ${plant.heightRange}` },
-                { label: "Difficulty", value: plant.difficulty.charAt(0).toUpperCase() + plant.difficulty.slice(1), extra: difficultyColors[plant.difficulty] },
+                { label: "Light", value: lightLabels[plant.light_needs || "medium"] },
+                { label: "Watering", value: waterLabels[plant.watering_frequency || "weekly"] },
+                { label: "Height", value: `📏 ${plant.height_range || "N/A"}` },
+                { label: "Difficulty", value: (plant.difficulty || "easy").charAt(0).toUpperCase() + (plant.difficulty || "easy").slice(1), extra: difficultyColors[plant.difficulty || "easy"] },
               ].map((attr) => (
                 <div key={attr.label} className="rounded-lg border border-border bg-card p-3">
                   <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{attr.label}</span>
@@ -86,33 +90,35 @@ const PlantDetail = () => {
               ))}
             </div>
 
-            {plant.petSafe && (
+            {plant.pet_safe && (
               <div className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm text-primary">
                 🐾 This plant is safe for pets
               </div>
             )}
 
-            {/* Care Tips */}
-            <div className="mt-8">
-              <h3 className="font-display text-lg text-foreground">Care Tips</h3>
-              <ul className="mt-3 space-y-2">
-                {plant.careTips.map((tip, i) => (
-                  <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
-                    <span className="mt-0.5 text-primary">•</span>
-                    {tip}
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {plant.care_tips && plant.care_tips.length > 0 && (
+              <div className="mt-8">
+                <h3 className="font-display text-lg text-foreground">Care Tips</h3>
+                <ul className="mt-3 space-y-2">
+                  {plant.care_tips.map((tip, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <span className="mt-0.5 text-primary">•</span>
+                      {tip}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
-            {/* Tags */}
-            <div className="mt-6 flex flex-wrap gap-2">
-              {plant.tags.map((tag) => (
-                <span key={tag} className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
-                  #{tag}
-                </span>
-              ))}
-            </div>
+            {plant.tags && plant.tags.length > 0 && (
+              <div className="mt-6 flex flex-wrap gap-2">
+                {plant.tags.map((tag) => (
+                  <span key={tag} className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
           </motion.div>
         </div>
       </div>

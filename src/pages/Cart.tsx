@@ -46,7 +46,7 @@ const Cart = () => {
                 >
                   <Link to={`/plant/${item.plant.id}`} className="shrink-0">
                     <img
-                      src={item.plant.image}
+                      src={item.plant.image_url || "/placeholder.svg"}
                       alt={item.plant.name}
                       className="h-24 w-24 rounded-lg object-cover"
                     />
@@ -56,7 +56,7 @@ const Cart = () => {
                       <Link to={`/plant/${item.plant.id}`} className="font-display text-lg text-foreground hover:text-primary">
                         {item.plant.name}
                       </Link>
-                      <p className="text-sm text-muted-foreground">{item.plant.seller}</p>
+                      <p className="text-sm text-muted-foreground">{item.plant.category}</p>
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">

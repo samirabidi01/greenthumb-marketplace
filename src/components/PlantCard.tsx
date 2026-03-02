@@ -1,17 +1,17 @@
 import { Link } from "react-router-dom";
-import { ShoppingCart, Star, Droplets, Sun, Leaf } from "lucide-react";
-import type { Plant } from "@/data/plants";
+import { ShoppingCart, Star } from "lucide-react";
+import type { Product } from "@/types/product";
 import { useCart } from "@/context/CartContext";
 import { motion } from "framer-motion";
 
-const lightIcons = { low: "☁️", medium: "🌤️", high: "☀️" };
-const difficultyColors = {
+const lightIcons: Record<string, string> = { low: "☁️", medium: "🌤️", high: "☀️" };
+const difficultyColors: Record<string, string> = {
   easy: "bg-primary/10 text-primary",
   medium: "bg-accent/10 text-accent",
   hard: "bg-destructive/10 text-destructive",
 };
 
-const PlantCard = ({ plant, index = 0 }: { plant: Plant; index?: number }) => {
+const PlantCard = ({ plant, index = 0 }: { plant: Product; index?: number }) => {
   const { addToCart } = useCart();
 
   return (
@@ -24,12 +24,12 @@ const PlantCard = ({ plant, index = 0 }: { plant: Plant; index?: number }) => {
       <Link to={`/plant/${plant.id}`} className="block">
         <div className="relative aspect-square overflow-hidden bg-secondary">
           <img
-            src={plant.image}
+            src={plant.image_url || "/placeholder.svg"}
             alt={plant.name}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
           />
-          {plant.petSafe && (
+          {plant.pet_safe && (
             <span className="absolute left-3 top-3 rounded-full bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground">
               🐾 Pet Safe
             </span>
@@ -40,7 +40,7 @@ const PlantCard = ({ plant, index = 0 }: { plant: Plant; index?: number }) => {
         <div className="mb-1 flex items-center gap-1 text-xs text-muted-foreground">
           <Star className="h-3.5 w-3.5 fill-accent text-accent" />
           <span className="font-medium text-foreground">{plant.rating}</span>
-          <span>({plant.reviewCount})</span>
+          <span>({plant.review_count})</span>
         </div>
         <Link to={`/plant/${plant.id}`}>
           <h3 className="font-display text-lg leading-tight text-foreground transition-colors group-hover:text-primary">
@@ -48,8 +48,8 @@ const PlantCard = ({ plant, index = 0 }: { plant: Plant; index?: number }) => {
           </h3>
         </Link>
         <div className="mt-2 flex flex-wrap gap-1.5">
-          <span className="text-xs">{lightIcons[plant.lightNeeds]} {plant.lightNeeds} light</span>
-          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${difficultyColors[plant.difficulty]}`}>
+          <span className="text-xs">{lightIcons[plant.light_needs || "medium"]} {plant.light_needs} light</span>
+          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${difficultyColors[plant.difficulty || "easy"]}`}>
             {plant.difficulty}
           </span>
         </div>
