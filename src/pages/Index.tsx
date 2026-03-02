@@ -1,12 +1,14 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Truck, ShieldCheck, Leaf } from "lucide-react";
+import { ArrowRight, Truck, ShieldCheck, Leaf, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { plants, categories } from "@/data/plants";
+import { categories } from "@/types/product";
+import { useProducts } from "@/hooks/useProducts";
 import PlantCard from "@/components/PlantCard";
 import heroImage from "@/assets/hero-plants.jpg";
 
 const Index = () => {
-  const featured = plants.slice(0, 4);
+  const { data: products = [], isLoading } = useProducts();
+  const featured = products.slice(0, 4);
 
   return (
     <div className="min-h-screen">
@@ -83,11 +85,17 @@ const Index = () => {
               View all →
             </Link>
           </div>
-          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {featured.map((plant, i) => (
-              <PlantCard key={plant.id} plant={plant} index={i} />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {featured.map((plant, i) => (
+                <PlantCard key={plant.id} plant={plant} index={i} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
