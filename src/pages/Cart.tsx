@@ -1,10 +1,52 @@
-import { Link } from "react-router-dom";
-import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag, Loader2 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const Cart = () => {
   const { items, removeFromCart, updateQuantity, clearCart, totalPrice } = useCart();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [checkingOut, setCheckingOut] = useState(false);
+
+  const handleCheckout = async () => {
+    if (!user) {
+      toast({ title: "Sign in required", description: "Please sign in to checkout.", variant: "destructive" });
+      navigate("/auth");
+      return;
+    }
+
+    setCheckingOut(true);
+    try {
+      const checkoutItems = items.map((item) => ({
+        product_id: item.plant.id,
+        name: item.plant.name,
+        price: item.plant.price,
+        quantity: item.quantity,
+        image_url: item.plant.image_url,
+      }));
+
+      const { data, error } = await supabase.functions.invoke("create-checkout", {
+        body: { items: checkoutItems },
+      });
+
+      if (error) throw error;
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error("No checkout URL returned");
+      }
+    } catch (err: any) {
+      toast({ title: "Checkout failed", description: err.message, variant: "destructive" });
+    } finally {
+      setCheckingOut(false);
+    }
+  };
 
   if (items.length === 0) {
     return (
@@ -32,7 +74,6 @@ const Cart = () => {
         <h1 className="text-4xl text-foreground">Your Cart</h1>
 
         <div className="mt-8 grid gap-8 lg:grid-cols-3">
-          {/* Items */}
           <div className="space-y-4 lg:col-span-2">
             <AnimatePresence>
               {items.map((item) => (
@@ -75,7 +116,7 @@ const Cart = () => {
                         </button>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="font-bold text-foreground">${item.plant.price * item.quantity}</span>
+                        <span className="font-bold text-foreground">${(Number(item.plant.price) * item.quantity).toFixed(2)}</span>
                         <button
                           onClick={() => removeFromCart(item.plant.id)}
                           className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
@@ -90,7 +131,6 @@ const Cart = () => {
             </AnimatePresence>
           </div>
 
-          {/* Summary */}
           <div className="h-fit rounded-xl border border-border bg-card p-6">
             <h3 className="font-display text-lg text-foreground">Order Summary</h3>
             <div className="mt-4 space-y-2 text-sm">
@@ -114,8 +154,19 @@ const Cart = () => {
                 Add ${(50 - totalPrice).toFixed(2)} more for free shipping!
               </p>
             )}
-            <button className="mt-6 w-full rounded-xl bg-primary py-3.5 font-medium text-primary-foreground transition-transform hover:scale-[1.02] active:scale-[0.98]">
-              Proceed to Checkout
+            <button
+              onClick={handleCheckout}
+              disabled={checkingOut}
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 font-medium text-primary-foreground transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:hover:scale-100"
+            >
+              {checkingOut ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Proceed to Checkout"
+              )}
             </button>
             <button
               onClick={clearCart}
