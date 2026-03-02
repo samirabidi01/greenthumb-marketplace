@@ -1,1 +1,10 @@
 project_id = "fgrixzpeqzuzwjpmafnd"
+
+[functions.create-checkout]
+verify_jwt = false
+
+[functions.verify-payment]
+verify_jwt = false
+
+[functions.seed-products]
+verify_jwt = false
